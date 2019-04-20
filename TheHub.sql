@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS `collections` (
 --
 
 CREATE TABLE IF NOT EXISTS `memos` (
-  `user_id`` int(10) NOT NULL,
-  `journal_cdata` CDATA(240) NOT NULL,
+  `user_id` int(10) NOT NULL,
+  `journal_cdata` varchar(240) NOT NULL,
   `date_created` date NOT NULL,
   `memo_id` int(10) NOT NULL AUTO_INCREMENT,
   `collection_id` int(10) NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS `memos` (
 
 CREATE TABLE IF NOT EXISTS `todo` (
   `user_id` int(10) NOT NULL,
-  `text_data` CDATA(120) NOT NULL,
+  `text_data` varchar(120) NOT NULL,
   `date_created` date NOT NULL,
   `due_date` date,
   `todo_id` int(10) NOT NULL AUTO_INCREMENT,
