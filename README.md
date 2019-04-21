@@ -6,3 +6,5 @@ if you want to create a whole new database, just run the code after deleting the
 
 the folder i've uploaded has a good portion of the todo list functionality as well as basic login stuff. 
 a list of what i've completed can be found in the comments of index.jsp at the top.
+
+all the files i've just uploaded at 12:25pm are in a second branch called todo v0.1
