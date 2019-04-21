@@ -8,3 +8,5 @@ the folder i've uploaded has a good portion of the todo list functionality as we
 a list of what i've completed can be found in the comments of index.jsp at the top.
 
 not sure how to add a folder rofl so i made a new branch with all the necesary files.
+
+don't forget, for all the files that access the sql database, you'll need to change the address/password to fit your own stuff
