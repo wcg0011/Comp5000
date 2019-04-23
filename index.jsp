@@ -1,4 +1,8 @@
-<%@ page import="java.sql.Date" %><%--
+<%@ page import="java.text.DateFormat" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.util.Calendar" %>
+<%@ page import="java.util.concurrent.TimeUnit" %>
+<%@ page import="java.text.DecimalFormat" %><%--
   Created by IntelliJ IDEA.
   User: shiel
   Date: 4/20/2019
@@ -9,18 +13,35 @@
 <%--To do:
     1) COMPLETE: display a list of tasks with due dates
     2) COMPLETE: update status to complete/incomplete
-    3) sort by overdue/not overdue
-    4) sort by due in next day/week/month/year
-    5) progress bar (percentage of tasks complete for next day/week/month/year
+    3) COMPLETE: sort by overdue/not overdue
+    4) COMPLETE: sort by due in next day/week/month/year
+    5) COMPLETE: progress bar (percentage of tasks complete for next day/week/month/year
+        [1] count number of tasks due in next time period
+        [2] count number of those that are complete
+        [3] create percentage of that
     6) COMPLETE: delete tasks
     7) COMPLETE: default values for new task
     8) CSS
+    -createtask kills things
+    -make the confirmation button a notification to avoid css issues
     --%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <title>The Hub: Home Page</title>
+    <style>
+        #text {
+            position: absolute; /* Sit on top of the page content */
+            top: 50%;
+            left: 50%;
+            font-size: 25px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7); /* Black background with opacity */
+            transform: translate(-50%, -50%);
+            -ms-transform: translate(-50%, -50%);
+        }
+    </style>
 </head>
 <body>
 <a href="logout.jsp"><h3>Logout</h3></a>       <!-- Logout link -->
@@ -53,165 +74,557 @@
         }
         rs.close();
 
+        //https://www.w3schools.com/howto/howto_js_progressbar.asp
+        //get ready to show percentage of tasks complete for specified time period
         qr = "SELECT * FROM todo WHERE user_id = " + user_id + ";";
-        rs = st.executeQuery(qr);
+        rs = st.executeQuery(qr);       //gets all of a user's tasks
+        int total = 0;
+        int complete = 0;
+        String period = "";
+        //if sort is "All tasks"
+        if (request.getParameter("sort") == null || request.getParameter("sort").equals("1")) {
+            while (rs.next()) {     //count total tasks and tasks completed to get percentage later
+                total++;
+                if (rs.getInt("is_completed") == 1) {
+                    complete++;
+                }
+            }
+            period = "of all your tasks!";
+        }
+        //else if sort is anything else, filter by due date to add total tasks to complete in that time period
+        else {
+            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); //dateformat for use in sort cases
+            java.util.Date due = new java.util.Date();
+            long diff = 0;
+            while (rs.next()) {
+                //total = 0;
+                //complete = 0;
+                diff = 0;
+                int todo_id = rs.getInt("todo_id");
+                qr = "SELECT due_date FROM todo WHERE todo_id = " + todo_id + ";";
+                rs1 = st1.executeQuery(qr);
+                if (rs1.next()) {
+                    due = rs1.getDate("due_date");
+
+                    if (due != null) {
+                        Calendar c = Calendar.getInstance();
+                        java.util.Date tomorrow = dateFormat.parse(dateFormat.format(c.getTime())); //parse tomorrow's date into usable form
+                        long diffInMilli = (due.getTime() - tomorrow.getTime());
+                        diff = TimeUnit.DAYS.convert(diffInMilli, TimeUnit.MILLISECONDS);      //converts difference in times to days
+                    }
+                    if (request.getParameter("sort").equals("2")) {
+                        period = "of your tasks for the next day!";
+                        //get tomorrow's date
+                        if (diff <= 1 && diff >= 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                            total++;
+                            if (rs.getInt("is_completed") == 1) {
+                                complete++;
+                            }
+                        }
+                    } else if (request.getParameter("sort").equals("3")) {
+                        period = "of your tasks for the next week!";
+                        //get tomorrow's date
+                        if (diff <= 7 && diff >= 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                            total++;
+                            if (rs.getInt("is_completed") == 1) {
+                                complete++;
+                            }
+                        }
+                    } else if (request.getParameter("sort").equals("4")) {
+                        period = "of your tasks for the next month!";
+                        //get tomorrow's date
+                        if (diff <= 31 && diff >= 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                            total++;
+                            if (rs.getInt("is_completed") == 1) {
+                                complete++;
+                            }
+                        }
+                    } else if (request.getParameter("sort").equals("5")) {
+                        period = "of your tasks for the next year!";
+                        //get tomorrow's date
+                        if (diff <= 365 && diff >= 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                            total++;
+                            if (rs.getInt("is_completed") == 1) {
+                                complete++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //calculate the percent complete
+        DecimalFormat df = new DecimalFormat("###.#");
+        double percentComplete = ((double) complete / total) * 100;
+        int tasksToGo = total - complete;
 %>
+<h3>
+    <text>You have completed <%=df.format(percentComplete)%>% <%=period%>
+    </text>
+</h3>
+<h3>
+    <text>You have <%=tasksToGo%> tasks to still complete out of <%=total%>!</text>
+</h3>
+<%
 
-<div>
-    <%--//__________________________________________________________________________________________--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%--Display all uncompleted tasks--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%--//__________________________________________________________________________________________--%>
-    <table style="float: left; border: 1px solid black; width:30%;">
-        <tbody>
-        <tr>
-            <th>To-do List</th>
-        </tr>
-        <form name="markComplete" Method="POST">
-            <%
-                while (rs.next()) {
-                    if (rs.getInt("is_completed") != 1) {
-                        int todo_id = rs.getInt("todo_id");
-            %>
-            <%--    hidden input to get all of the user's todo_ids--%>
-            <input type="hidden" name="todo_ids" value="<%=todo_id%>"/>
-            <br/>
+    qr = "SELECT * FROM todo WHERE user_id = " + user_id + ";";
+    rs = st.executeQuery(qr);
+%>
+<%--//__________________________________________________________________________________________--%>
+<%--//__________________________________________________________________________________________--%>
+<%--Display all uncompleted tasks--%>
+<%--        display overdue tasks first, then normal tasks--%>
+<%--        also sort tasks if necessary--%>
+<%--//__________________________________________________________________________________________--%>
+<%--//__________________________________________________________________________________________--%>
+<form>
+    <text>Sort By:</text>
+    <select name="sort">
+        <option value="1">All Tasks</option>
+        <option value="2">Due Tomorrow</option>
+        <option value="3">Due in Next Week</option>
+        <option value="4">Due in Next Month</option>
+        <option value="5">Due in Next Year</option>
+    </select>
+    <input type="submit" name="sortCall" value="Sort"/>
+</form>
+<%--        The idea here is to send our sort criteria to a javascript function that will determine which tasks fall under the sort
+            then it will come back and print those tasks in a table. javascript was chosen because it more easily handles dates
+            however, i am stumped as to how to use it. i'm going to give it a go in java--%>
+<%--//Todo tasks--%>
+<div style="content: ''; display: table; clear: both;">
+    <div style="float:left;">
+        <table style="; border: 1px solid black; width:20%;">
+            <tbody>
             <tr>
-                <td>
-                    <table border="2">
-                        <tbody>
-                        <tr>
-                            <th><%=rs.getString("task_name")%>
-                            </th>
-                        </tr>
-                        <tr>
-                            <td><%=rs.getString("text_data")%>
-                            </td>
-                            <td>
-                                <%--                mark each box with specific todo_id to pass to markAsComplete handler--%>
-                                <input type="checkbox" name="complete<%=todo_id%>" value="complete"/>
-                            </td>
-                        </tr>
-                        <tr>
-                            <%
-                                java.sql.Date due = rs.getDate("due_date");
-                                if (due == null) {
-                            %>
-                            <td>No Due Date
-                            </td>
-                            <%
-                            } else {
-                            %>
-                            <td>Due Date: <%=due%>
-                            </td>
-                            <%
+                <th><h3>To-do List:</h3></th>
+            </tr>
+            <form name="markComplete" Method="POST">
+                <tr>
+                    <th style="border: 1px solid black;">Overdue Tasks</th>
+                </tr>
+                <%
+                    //------------------------------------------------------------------
+                    //------------------------------------------------------------------
+                    //sort overdue tasks
+                    //------------------------------------------------------------------
+                    //------------------------------------------------------------------
+
+                    while (rs.next()) {
+                        if (rs.getInt("is_completed") != 1) {
+                            int todo_id = rs.getInt("todo_id");
+                            qr = "SELECT due_date FROM todo WHERE todo_id = " + todo_id + ";";
+                            rs1 = st1.executeQuery(qr);
+                            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); //dateformat for use in sort cases
+                            //navigate to appropriate sort option
+                            if (rs1.next()) {
+                                //check for overdue first
+                                java.util.Date dued = rs1.getDate("due_date");
+                                if (dued != null) {
+                                    Calendar c = Calendar.getInstance();
+                                    java.util.Date tomorrow = dateFormat.parse(dateFormat.format(c.getTime())); //parse tomorrow's date into usable form
+                                    long diffInMilli = (dued.getTime() - tomorrow.getTime());
+                                    long diff = TimeUnit.DAYS.convert(diffInMilli, TimeUnit.MILLISECONDS);      //converts difference in times to days
+
+                                    if (diff >= 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                        rs.getString("task_name");
+                                        rs.getString("text_data");
+                                        rs.getDate("due_date");
+                                        continue;
+                                    }
+                                } else if (dued == null) {
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
                                 }
-                            %>
-                        </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <%
+                                rs1.close();
+                                //perform sort based on due date for incomplete task ids read in
+                %>
+                <%--    hidden input to get all of the user's todo_ids--%>
+                <input type="hidden" name="todo_ids" value="<%=todo_id%>"/>
+                <br/>
+                <tr>
+                    <td>
+                        <table border="2">
+                            <tbody>
+                            <tr>
+                                <th><%=rs.getString("task_name")%>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td><%=rs.getString("text_data")%>
+                                </td>
+                                <td>
+                                    <%--                mark each box with specific todo_id to pass to markAsComplete handler--%>
+                                    <input type="checkbox" name="complete<%=todo_id%>" value="complete"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <%
+                                    java.sql.Date due = rs.getDate("due_date");
+                                    if (due == null) {
+                                    } else {
+                                %>
+                                <td>Due Date: <%=due%>
+                                </td>
+                                <%
+                                    }
+                                %>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <%
+                            }
+                        }
                     }
-                }
-            %>
-            <br/>
-            <tr>
-                <td>
-                    <input type="submit" name="markChecked" value="Mark Selected Tasks as Complete"/> <br/>
-                    <input type="submit" name="deleteTasks" value="Delete Selected Tasks"/>
-                </td>
-            </tr>
-        </form>
-        </tbody>
-    </table>
+                    //close rs and reload it with the values to iterate through for the tasks that aren't overdue
+                    rs.close();
+                    qr = "SELECT * FROM todo WHERE user_id = " + user_id + ";";
+                    rs = st.executeQuery(qr);
+                %>
+                <br/>
+                <tr>
+                    <th style="border: 1px solid black;">End Overdue Tasks</th>
+                </tr>
+                <%--        -------------------------------------------------------------%>
+                <%--        -------------------------------------------------------------%>
+                <%--        Break between overdue and not overdue tasks--%>
+                <%--        -------------------------------------------------------------%>
+                <%--        -------------------------------------------------------------%>
+                <%
+                    //read in incomplete task ids and handle one at a time
+                    String title = "All Tasks";
+                    if (request.getParameter("sort") != null) {
+                        switch (request.getParameter("sort")) {
+                            case "1":
+                                break;
+                            case "2":
+                                title = "Due Tomorrow";
+                                break;
+                            case "3":
+                                title = "Due in Next Week";
+                                break;
+                            case "4":
+                                title = "Due in Next Month";
+                                break;
+                            case "5":
+                                title = "Due in Next Year";
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                %>
+                <tr>
+                    <%--            //--------------------------------------------------------------------%>
+                    <%--            //--------------------------------------------------------------------%>
+                    <%--            //display sorted tasks ( not overdue )--%>
+                    <%--            //--------------------------------------------------------------------%>
+                    <%--            //--------------------------------------------------------------------%>
+                    <th style="border: 1px solid black;"><%=title%>
+                    </th>
+                </tr>
+                <%
+                    while (rs.next()) {
+                        if (rs.getInt("is_completed") != 1) {
+                            int todo_id = rs.getInt("todo_id");
+                            qr = "SELECT due_date FROM todo WHERE todo_id = " + todo_id + ";";
+                            rs1 = st1.executeQuery(qr);
+                            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); //dateformat for use in sort cases
+                            java.util.Date due = new java.util.Date();
+                            long diff = 0;
+                            if (rs1.next()) {
+                                due = rs1.getDate("due_date");
+                            }
+                            if (due != null) {
+                                Calendar c = Calendar.getInstance();
+                                java.util.Date tomorrow = dateFormat.parse(dateFormat.format(c.getTime())); //parse tomorrow's date into usable form
+                                long diffInMilli = (due.getTime() - tomorrow.getTime());
+                                diff = TimeUnit.DAYS.convert(diffInMilli, TimeUnit.MILLISECONDS);      //converts difference in times to days
+                            }
+                            //navigate to appropriate sort option
+                            //check for overdue first
 
-
-    <%--//__________________________________________________________________________________________--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%--Display all completed tasks--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%
-        rs.close();
-        qr = "SELECT * FROM todo WHERE user_id = " + user_id + ";";
-        rs = st.executeQuery(qr);
-    %>
-    <table style="float: left; border: 1px solid black; width:30%;">
-        <tbody>
-        <tr>
-            <th>Completed Tasks</th>
-        </tr>
-        <form name="markInomplete" Method="POST">
-            <%
-                while (rs.next()) {
-                    if (rs.getInt("is_completed") == 1) {
-                        int todo_id = rs.getInt("todo_id");
-            %>
-            <%--    hidden input to get all of the user's todo_ids--%>
-            <input type="hidden" name="todo_ids" value="<%=todo_id%>"/>
-            <br/>
-            <tr>
-                <td>
-                    <table border="2">
-                        <tbody>
-                        <tr>
-                            <th><%=rs.getString("task_name")%>
-                            </th>
-                        </tr>
-                        <tr>
-                            <td><%=rs.getString("text_data")%>
-                            </td>
-                            <td>
-                                <%--                mark each box with specific todo_id to pass to markAsComplete handler--%>
-                                <input type="checkbox" name="complete<%=todo_id%>" value="incomplete"/>
-                            </td>
-                        </tr>
-                        <tr>
-                            <%
-                                java.sql.Date due = rs.getDate("due_date");
-                                if (due == null) {
-                            %>
-                            <td>No Due Date
-                            </td>
-                            <%
-                            } else {
-                            %>
-                            <td>Due Date: <%=due%>
-                            </td>
-                            <%
+                            //all
+                            if (request.getParameter("sort") == null || request.getParameter("sort").equals("1")) {
+                                //if no sort, only filter out overdue items
+                                if (diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
                                 }
-                            %>
-                        </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            <%
+                            }
+                            //day
+                            else if (request.getParameter("sort").equals("2")) {
+                                //get tomorrow's date
+                                if (diff > 1 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            //week
+                            else if (request.getParameter("sort").equals("3")) {
+                                //get next week's date
+                                if (diff > 7 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            //month
+                            else if (request.getParameter("sort").equals("4")) {
+                                //get next month's date
+                                if (diff > 31 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            //year
+                            else if (request.getParameter("sort").equals("5")) {
+                                //get next years's date
+                                if (diff > 365 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            rs1.close();
+                            //perform sort based on due date for incomplete task ids read in
+                %>
+                <%--    hidden input to get all of the user's todo_ids--%>
+                <input type="hidden" name="todo_ids" value="<%=todo_id%>"/>
+                <%--            <br/>--%>
+                <tr>
+                    <td>
+                        <table border="2">
+                            <tbody>
+                            <tr>
+                                <th><%=rs.getString("task_name")%>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td><%=rs.getString("text_data")%>
+                                </td>
+                                <td>
+                                    <%--                mark each box with specific todo_id to pass to markAsComplete handler--%>
+                                    <input type="checkbox" name="complete<%=todo_id%>" value="complete"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <%
+                                    java.sql.Date dued = rs.getDate("due_date");
+                                    if (dued == null) {
+                                    } else {
+                                %>
+                                <td>Due Date: <%=dued%>
+                                </td>
+                                <%
+                                    }
+                                %>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <%
+                        }
                     }
-                }
-            %>
-            <br/>
+                %>
+                <br/>
+                <tr>
+                    <th style="border: 1px solid black;">End To-Do List</th>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="submit" name="markChecked" value="Mark Selected Tasks as Complete"/> <br/>
+                        <input type="submit" name="deleteTasks" value="Delete Selected Tasks"/>
+                    </td>
+                </tr>
+            </form>
+            </tbody>
+        </table>
+    </div>
+
+    <%--//take care of completed tasks--%>
+    <div style="float:left;">
+        <table style="float:left; border: 1px solid black; width:20%;">
+            <tbody>
             <tr>
-                <td>
-                    <input type="submit" name="markCheckedIn" value="Mark Selected Tasks as Incomplete"/> <br/>
-                    <input type="submit" name="deleteTasks" value="Delete Selected Tasks"/>
-                </td>
+                <th><h3>Completed Tasks:</h3></th>
             </tr>
-        </form>
-        </tbody>
-    </table>
-    <%--//__________________________________________________________________________________________--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%--provide option to create tasks--%>
-    <%--//__________________________________________________________________________________________--%>
-    <%--//__________________________________________________________________________________________--%>
-    <br/>
+            <form name="markIncomplete" Method="POST">
+                <%
+                    qr = "SELECT * FROM todo WHERE user_id = " + user_id + ";";
+                    rs = st.executeQuery(qr);
+                    //read in incomplete task ids and handle one at a time
+                    //String title = "All Tasks";
+                    if (request.getParameter("sort") != null) {
+                        switch (request.getParameter("sort")) {
+                            case "1":
+                                break;
+                            case "2":
+                                title = "Completed Tasks due Tomorrow";
+                                break;
+                            case "3":
+                                title = "Completed Tasks due in Next Week";
+                                break;
+                            case "4":
+                                title = "Completed Tasks due in Next Month";
+                                break;
+                            case "5":
+                                title = "Completed Tasks due in Next Year";
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                %>
+                <tr>
+                    <%--            //--------------------------------------------------------------------%>
+                    <%--            //--------------------------------------------------------------------%>
+                    <%--            //display sorted tasks--%>
+                    <%--            //--------------------------------------------------------------------%>
+                    <%--            //--------------------------------------------------------------------%>
+                    <th style="border: 1px solid black;"><%=title%>
+                    </th>
+                </tr>
+                <%
+                    while (rs.next()) {
+                        if (rs.getInt("is_completed") == 1) {
+                            int todo_id = rs.getInt("todo_id");
+                            qr = "SELECT due_date FROM todo WHERE todo_id = " + todo_id + ";";
+                            rs1 = st1.executeQuery(qr);
+                            DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd"); //dateformat for use in sort cases
+                            java.util.Date due = new java.util.Date();
+                            long diff = 0;
+                            if (rs1.next()) {
+                                due = rs1.getDate("due_date");
+                            }
+                            if (due != null) {
+                                Calendar c = Calendar.getInstance();
+                                java.util.Date tomorrow = dateFormat.parse(dateFormat.format(c.getTime())); //parse tomorrow's date into usable form
+                                long diffInMilli = (due.getTime() - tomorrow.getTime());
+                                diff = TimeUnit.DAYS.convert(diffInMilli, TimeUnit.MILLISECONDS);      //converts difference in times to days
+                            }
+                            //navigate to appropriate sort option
+                            //check for overdue first
+
+                            //all
+                            if (request.getParameter("sort") == null || request.getParameter("sort").equals("1")) {
+                            }
+                            //day
+                            else if (request.getParameter("sort").equals("2")) {
+                                //get tomorrow's date
+                                if (diff > 1 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            //week
+                            else if (request.getParameter("sort").equals("3")) {
+                                //get next week's date
+                                if (diff > 7 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            //month
+                            else if (request.getParameter("sort").equals("4")) {
+                                //get next month's date
+                                if (diff > 31 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            //year
+                            else if (request.getParameter("sort").equals("5")) {
+                                //get next years's date
+                                if (diff > 365 || diff < 0) { //if difference is greater than a day, remove from list by calling rs.get all of it's attributes
+                                    rs.getString("task_name");
+                                    rs.getString("text_data");
+                                    rs.getDate("due_date");
+                                    continue;
+                                }
+                            }
+                            rs1.close();
+                            //perform sort based on due date for incomplete task ids read in
+                %>
+                <%--    hidden input to get all of the user's todo_ids--%>
+                <input type="hidden" name="todo_ids" value="<%=todo_id%>"/>
+                <%--            <br/>--%>
+                <tr>
+                    <td>
+                        <table border="2">
+                            <tbody>
+                            <tr>
+                                <th><%=rs.getString("task_name")%>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td><%=rs.getString("text_data")%>
+                                </td>
+                                <td>
+                                    <%--                mark each box with specific todo_id to pass to markAsComplete handler--%>
+                                    <input type="checkbox" name="complete<%=todo_id%>" value="incomplete"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <%
+                                    java.sql.Date dued = rs.getDate("due_date");
+                                    if (dued == null) {
+                                    } else {
+                                %>
+                                <td>Due Date: <%=dued%>
+                                </td>
+                                <%
+                                    }
+                                %>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                <%
+                        }
+                    }
+                %>
+                <br/>
+                <tr>
+                    <th style="border: 1px solid black;">End Completed Tasks</th>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="submit" name="markCheckedIn" value="Mark Selected Tasks as Incomplete"/> <br/>
+                        <input type="submit" name="deleteTasks" value="Delete Selected Tasks"/>
+                    </td>
+                </tr>
+            </form>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-
+<%--//__________________________________________________________________________________________--%>
+<%--//__________________________________________________________________________________________--%>
+<%--provide option to create tasks--%>
+<%--//__________________________________________________________________________________________--%>
+<%--//__________________________________________________________________________________________--%>
+<%--    <br/>--%>
 <form name="createTask" method="POST">
     <input type="submit" name="makeTask" value="Create a new task"/>
 </form>
@@ -220,12 +633,17 @@
     //create a form to input a new task
     if (request.getParameter("makeTask") != null) {
 %>
-<form name="taskForm" method="POST">
-    Task Name: <input type="text" name="taskName"> <br/>
-    Task Description: <input type="text" name="taskDescription"> <br/>
-    Due Date: <input type="date" name="dueDate"> <br/>
-    <input type="submit" name="finalizeCreation" value="Make Task">
-</form>
+<div id="overlay">
+    <div id="text">
+        <form name="taskForm" method="POST">
+            Task Name: <input type="text" name="taskName"> <br/>
+            Task Description: <input type="text" name="taskDescription"> <br/>
+            Due Date: <input type="date" name="dueDate"> <br/>
+            <input type="submit" name="finalizeCreation" value="Make Task">
+            <input type="submit" name="finalizeCreation" value="Cancel">
+        </form>
+    </div>
+</div>
 <%
     }
     //if user decides to create a task, set session attributes and navigate to NewTask.jsp
@@ -241,25 +659,27 @@
     //if user decides to delete task, send todo_id to DeleteTask.jsp
     //__________________________________________________________________________________________
     //__________________________________________________________________________________________
-
     if (request.getParameter("deleteTasks") != null) {
         String[] todo_ids = request.getParameterValues("todo_ids");
 %>
-<form name="toDelete" method="POST" action="DeleteTask.jsp"><%
-    for (String id : todo_ids) {
-        String temp = request.getParameter("complete" + id);
-        if (temp != null) {
-%>
-    <input type="hidden" name="thingsToDelete" value="<%=id%>"/>
-    <%
-            }
-        }%>
-    Are you sure you want to delete the selected tasks? <br/>
-    <input type="submit" name="sure" value="Continue">
-    <input type="submit" name="sure" value="Cancel">
-</form>
+<div id="overlay">
+    <div id="text">
+        <form name="toDelete" method="POST" action="DeleteTask.jsp"><%
+            for (String id : todo_ids) {
+                String temp = request.getParameter("complete" + id);
+                if (temp != null) {
+        %>
+            <input type="hidden" name="thingsToDelete" value="<%=id%>"/>
+            <%
+                    }
+                }%>
+            Are you sure you want to delete the selected tasks? <br/>
+            <input type="submit" name="sure" value="Continue">
+            <input type="submit" name="sure" value="Cancel">
+        </form>
+    </div>
+</div>
 <%
-
     }
 
     //__________________________________________________________________________________________
@@ -270,19 +690,23 @@
     if (request.getParameter("markChecked") != null) {
         String[] todo_ids = request.getParameterValues("todo_ids");
 %>
-<form name="toMark" method="POST" action="MarkAsComplete.jsp"><%
-    for (String id : todo_ids) {
-        String temp = request.getParameter("complete" + id);
-        if (temp != null) {
-%>
-    <input type="hidden" name="markAsDone" value="<%=id%>"/>
-    <%
-            }
-        }%>
-    Are you sure you want to mark the selected tasks as complete? <br/>
-    <input type="submit" name="sure" value="Continue">
-    <input type="submit" name="sure" value="Cancel">
-</form>
+<div id="overlay">
+    <div id="text">
+        <form name="toMark" method="POST" action="MarkAsComplete.jsp"><%
+            for (String id : todo_ids) {
+                String temp = request.getParameter("complete" + id);
+                if (temp != null) {
+        %>
+            <input type="hidden" name="markAsDone" value="<%=id%>"/>
+            <%
+                    }
+                }%>
+            Are you sure you want to mark the selected tasks as complete? <br/>
+            <input type="submit" name="sure" value="Continue">
+            <input type="submit" name="sure" value="Cancel">
+        </form>
+    </div>
+</div>
 <%
     }
 
@@ -294,19 +718,23 @@
     if (request.getParameter("markCheckedIn") != null) {
         String[] todo_ids = request.getParameterValues("todo_ids");
 %>
-<form name="toMarkIn" method="POST" action="MarkAsIncomplete.jsp"><%
-    for (String id : todo_ids) {
-        String temp = request.getParameter("complete" + id);
-        if (temp != null) {
-%>
-    <input type="hidden" name="markAsUndone" value="<%=id%>"/>
-    <%
-            }
-        }%>
-    Are you sure you want to mark the selected tasks as incomplete? <br/>
-    <input type="submit" name="sure" value="Continue">
-    <input type="submit" name="sure" value="Cancel">
-</form>
+<div id="overlay">
+    <div id="text">
+        <form name="toMarkIn" method="POST" action="MarkAsIncomplete.jsp"><%
+            for (String id : todo_ids) {
+                String temp = request.getParameter("complete" + id);
+                if (temp != null) {
+        %>
+            <input type="hidden" name="markAsUndone" value="<%=id%>"/>
+            <%
+                    }
+                }%>
+            Are you sure you want to mark the selected tasks as incomplete? <br/>
+            <input type="submit" name="sure" value="Continue">
+            <input type="submit" name="sure" value="Cancel">
+        </form>
+    </div>
+</div>
 <%
         }
 

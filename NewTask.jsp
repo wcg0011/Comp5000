@@ -24,23 +24,26 @@
     st = conn.createStatement();
     st1 = conn.createStatement();
     String qr;
-    //add user data from new task to database
-    String user_id = request.getParameter("user_id");
-    java.sql.Date dueDate;
-    java.sql.Date sqldate = new java.sql.Date(System.currentTimeMillis());
+    if (request.getParameter("finalizeCreation").equals("Cancel")) {
+        response.sendRedirect("index.jsp");
+    } else {
+        //add user data from new task to database
+        String user_id = request.getParameter("user_id");
+        java.sql.Date dueDate;
+        java.sql.Date sqldate = new java.sql.Date(System.currentTimeMillis());
         if (session.getAttribute("dueDate").equals("")) {
-             dueDate = null;
+            dueDate = null;
             qr = "INSERT INTO thehub.todo(user_id, task_name, text_data, date_created, due_date, is_completed) VALUES ("
                     + Integer.parseInt(user_id) + ", '" + session.getAttribute("taskName") + "', '" + session.getAttribute("taskDescription") + "', '"
                     + sqldate + "', " + dueDate + ", " + 0 + ");";
-        }
-        else {
+        } else {
             qr = "INSERT INTO thehub.todo(user_id, task_name, text_data, date_created, due_date, is_completed) VALUES ("
                     + Integer.parseInt(user_id) + ", '" + session.getAttribute("taskName") + "', '" + session.getAttribute("taskDescription") + "', '"
                     + sqldate + "', '" + session.getAttribute("dueDate") + "', " + 0 + ");";
         }
         st1.executeUpdate(qr);
-    response.sendRedirect("index.jsp");
+        response.sendRedirect("index.jsp");
+    }
 %>
 </body>
 </html>

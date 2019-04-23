@@ -29,15 +29,15 @@
 
         if (todo_ids == null) {
             response.sendRedirect("index.jsp");
-        }
-
-        for (String id : todo_ids) {
-            qr = "UPDATE todo SET is_completed = 0 WHERE todo_id = " + id + ";";
-            st.executeUpdate(qr);
+        } else {
+            for (String id : todo_ids) {
+                qr = "UPDATE todo SET is_completed = 0 WHERE todo_id = " + id + ";";
+                st.executeUpdate(qr);
+            }
+            response.sendRedirect("index.jsp");
         }
     }
 
-    response.sendRedirect("index.jsp");
 %>
 </body>
 </html>
