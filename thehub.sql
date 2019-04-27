@@ -81,3 +81,8 @@ CREATE TABLE IF NOT EXISTS `users` (
   `is_shown` int NOT NULL,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `replies` (
+	`memo_id` int(1) NOT NULL,
+    `reply_text` varchar(24) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
