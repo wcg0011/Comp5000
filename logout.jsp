@@ -1,0 +1,19 @@
+<%-- 
+    Document   : logout
+    Created on : 04/18/2019
+    Author     : Aidan Lambrecht, taken from Abishek's examples
+--%>
+<%
+	//invalidate session
+	if(session.getAttribute("uname") != null) {             
+		//if session was created
+		session.invalidate();
+		response.sendRedirect("index.jsp");
+    }
+	else
+	{
+		// passing variable "b" with URL
+		// lets say "b" is for "user must login"
+		response.sendRedirect("index.jsp?b");
+    }
+%>
