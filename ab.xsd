@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2019 sp1 (x64) (http://www.altova.com) by Will Graviett (Auburn University) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="userData">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="user" type="userT" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+	<xs:complexType name="userT">
+		<xs:sequence>
+			<xs:element name="Username" type="xs:string"/>
+			<xs:element name="Password" type="xs:string"/>
+			<xs:element name="Firstname" type="xs:string"/>
+			<xs:element name="Lastname" type="xs:string"/>
+			<xs:element name="To-doList" type="To-dosT"/>
+			<xs:element name="MemoList" type="MemosT"/>
+		</xs:sequence>
+		<xs:attribute name="ID" type="IntT10" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="To-dosT">
+		<xs:sequence>
+			<xs:element name="To-do" type="To-doT" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="TDL_ID" type="IntT10" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="To-doT">
+		<xs:sequence>
+			<xs:element name="Text_data" type="xs:string"/>
+			<xs:element name="Date_created" type="xs:date"/>
+			<xs:element name="Due_date" type="xs:date"/>
+			<xs:element name="Is_completed" type="IntT1"/>
+			<xs:element name="Is_shown" type="IntT1"/>
+		</xs:sequence>
+		<xs:attribute name="Todo_ID" type="IntT10" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="MemoT">
+		<xs:sequence>
+			<xs:element name="Journal_cdata" type="xs:string"/>
+			<xs:element name="Date_created" type="xs:date"/>
+			<xs:element name="Collection_id" type="IntT10"/>
+			<xs:element name="Is_in_collection" type="IntT1"/>
+			<xs:element name="Is_shown" type="IntT1"/>
+		</xs:sequence>
+		<xs:attribute name="Memo_ID" type="IntT10" use="required"/>
+	</xs:complexType>
+	
+	<xs:complexType name="MemosT">
+		<xs:sequence>
+			<xs:element name="Memo" type="MemoT" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="ML_ID" type="IntT10" use="required"/>
+	</xs:complexType>
+	
+	<xs:simpleType name="IntT10">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]"/>
+		</xs:restriction>
+	</xs:simpleType>
+	
+	<xs:simpleType name="IntT1">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[0-9]"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>
