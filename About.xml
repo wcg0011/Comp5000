@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+
+-->
+
+<Team xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="file:///D:/About2/About.xsd">
+
+	<Overview>
+			Everybody in the world today leads busy lives, and everyone struggles at points to organize their lives. This project aims to help people grab hold of their lifes and provide stability. The project will tentatively called "The Hub" contains tree main features: a Twitter-eqsue note system, a To-Do list, and seperate user accounts for customizability. These features are designed to help people organize their lives and become more efficent with their day to day activites so that they can spend more time doing the things they love.
+	</Overview>
+	
+	<TeamMember ID="1">
+		<Name>Aidan Lambrecht</Name>
+		<Major>Computer Engineering</Major>
+		<YearsLeft>1</YearsLeft>
+		<Responsibilities>
+		Settings Page
+		Home Page(Tasks): Percentage of Tasks completed shown
+		CSS
+		</Responsibilities>
+	</TeamMember>
+	<TeamMember ID="2">
+		<Name>Fisher Conanan</Name>
+		<Major>Computer Engineering</Major>
+		<YearsLeft>1</YearsLeft>
+		<Responsibilities>
+		Home page(Memos)
+			Add memos to database and display them
+			add/remove collections
+		</Responsibilities>
+	</TeamMember>
+	<TeamMember ID="3">
+		<Name>William Graviett</Name>
+		<Major>Computer Engineering</Major>
+		<YearsLeft>0</YearsLeft>
+		<Responsibilities>
+		Login/Sign-up Process
+		About.xml/.xsd/.jsp
+		</Responsibilities>
+	</TeamMember>
+</Team>
